@@ -42,4 +42,4 @@ Pull requests are welcome. This is just a hobby project which I plan to slowly e
 
 ## License
 
-[MIT](https://choosealicense.com/licenses/mit/)
+No licenses for now.
