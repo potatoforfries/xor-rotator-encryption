@@ -1,4 +1,5 @@
-import os
+import os           # for generating random bytes
+import argparse     # for handling command-line arguments
 
 class OneTimePad:
     def __init__(self, text:str = None, key:int = None):   
@@ -7,8 +8,13 @@ class OneTimePad:
         # if both text and key are provided, the text is not used to generate a key, rather the provided key is used
         if not (text or key):
             raise ValueError("either text or key has to be provided!!")
-        elif key:               
+        
+        elif isinstance(key, bytes):
+            self.key = key
+
+        elif isinstance(key, int):               
             self.key = key.to_bytes(len(str(key)), byteorder = 'big')   #'big' -> converts int to big endian byte
+
         else:               
             # if text is only provided, generates a truly random key, same length as the text
             self.key = os.urandom(len(text))    # os.urandom() returns a byte object with random bytes
@@ -34,14 +40,51 @@ class OneTimePad:
 
         return decrypted
 
+def main():
+    parser = argparse.ArgumentParser(description="One Time Pad Encryptor/Decryptor")
+    subparsers = parser.add_subparsers(dest='command', required=True)
+
+    # Encrypt Command
+    encrypt_parser = subparsers.add_parser("encrypt", help="Encrypt a string")
+    encrypt_parser.add_argument("text", help="Text to encrypt")
+    encrypt_parser.add_argument("--key", required=False, help="Key to use for encryption")
+    # Decrypt Command
+    decrypt_parser = subparsers.add_parser("decrypt", help="Decrypt an encrypted integers")
+    decrypt_parser.add_argument("encrypted", help="Encrypted integers (space-separated)")
+    decrypt_parser.add_argument("--key", required=True, help="Key used to encrypt (space-separated)")
+
+    args = parser.parse_args()
+
+    if args.command == "encrypt":
+        if args.key:
+            key_bytes = bytes(map(int, args.key.split()))
+            pad = OneTimePad(text=args.text, key=key_bytes)
+        else:
+            pad = OneTimePad(text=args.text)
+
+        encrypted = pad.encrypt(args.text)
+
+        #converts all the elements in the list into strings and join them
+        print("No key provided. Generated a random one time pad.")
+        print("Encrypted:", ' '.join(map(str, encrypted)))  
+        print("Key:      ", ' '.join(map(str, pad.key)))
+
+    elif args.command == "decrypt":
+        encrypted_list = list(map(int, args.encrypted.split()))
+        key_bytes = bytes(map(int, args.key.split()))
+        pad = OneTimePad(key=key_bytes)
+        decrypted = pad.decrypt(encrypted_list)
+        print("Decrypted:", decrypted)
 
 if __name__ == "__main__":
-    x = OneTimePad("aStringwith20letters")
-    print("key in byte(s): ", x.key)
-    print(len("Exaaaaactly20letters"))
-    print(len("aStringwith20letters"))
-    enc = x.encrypt("Exaaaaactly20letters")
-    print("\nencrypted list of integers: ", enc)
+    main()
 
-    dec = x.decrypt(enc)
-    print("\ndecrypted string: ", dec)
+# if __name__ == "__main__":
+#     x = OneTimePad("aStringwith20letters")
+#     print("key in byte(s): ", x.key)
+    
+#     enc = x.encrypt("Exaaaaactly20letters")
+#     print("\nencrypted list of integers: ", enc)
+
+#     dec = x.decrypt(enc)
+#     print("\ndecrypted string: ", dec)
